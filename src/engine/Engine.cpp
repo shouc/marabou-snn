@@ -811,17 +811,15 @@ void Engine::reduceRedundantVars( InputQuery &inputQuery, unsigned optimizedCoun
                         equationRelated[foundCount++] = equationIterator;
                 }
             }
-
-            if (foundCount == 1)
-            {
+            for (unsigned i = 0; i < foundCount; ++i) {
                 // remove eq
-                inputQuery.makeVariableReduced(*equationRelated[0], variable);
+                inputQuery.makeVariableReduced(*equationRelated[i], variable);
                 // propagate bounds
                 double upperBound = inputQuery.getUpperBound(variable);
                 double lowerBound = inputQuery.getLowerBound(variable);
                 // addend must be two
-                List<Equation::Addend> add = equationRelated[0]->_addends;
-                double rhs_result = equationRelated[0]->_scalar;
+                List<Equation::Addend> add = equationRelated[i]->_addends;
+                double rhs_result = equationRelated[i]->_scalar;
                 double var_coeff;
                 double res_coeff;
                 for (auto &ad: add)
@@ -849,11 +847,7 @@ void Engine::reduceRedundantVars( InputQuery &inputQuery, unsigned optimizedCoun
                 {
                     inputQuery.setUpperBound(variable, new_ub);
                 }
-                inputQuery._equations.erase(equationRelated[0]);
-            }
-            else if (foundCount != 0)
-            {
-                break;
+                inputQuery._equations.erase(equationRelated[i]);
             }
             reduceRedundantVars(inputQuery, optimizedCount);
             break;

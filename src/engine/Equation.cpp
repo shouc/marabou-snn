@@ -210,6 +210,15 @@ double Equation::getCoefficient( unsigned variable ) const
     return 0;
 }
 
+Equation *Equation::toHeap() {
+    auto result = new Equation;
+    List<Addend> addend = _addends;
+    result->_scalar = _scalar;
+    result->_addends = addend;
+    result->_type = _type;
+    return result;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

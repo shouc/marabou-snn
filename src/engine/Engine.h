@@ -493,6 +493,7 @@ private:
     void invokePreprocessor( const InputQuery &inputQuery, bool preprocess );
     void printInputBounds( const InputQuery &inputQuery ) const;
     void storeEquationsInDegradationChecker();
+    void reduceRedundantVars( InputQuery &inputQuery, unsigned );
     void removeRedundantEquations( const double *constraintMatrix );
     void selectInitialVariablesForBasis( const double *constraintMatrix, List<unsigned> &initialBasis, List<unsigned> &basicRows );
     void initializeTableau( const double *constraintMatrix, const List<unsigned> &initialBasis );
@@ -533,6 +534,8 @@ private:
       Extract the satisfying assignment from the MILP solver
     */
     void extractSolutionFromGurobi( InputQuery &inputQuery );
+
+    void variableReduction( InputQuery &inputQuery );
 };
 
 #endif // __Engine_h__

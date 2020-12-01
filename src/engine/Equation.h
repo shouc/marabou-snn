@@ -91,6 +91,8 @@ public:
 
     void dump() const;
     void dump( String &output ) const;
+
+    Equation* toHeap();
 };
 
 #endif // __Equation_h__

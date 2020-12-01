@@ -134,14 +134,15 @@ public:
     void setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr );
     NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const;
 
+    List<Equation> _equations;
+    Map<unsigned, Equation*> _reducedVars;
 private:
     unsigned _numberOfVariables;
-    List<Equation> _equations;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
     List<PiecewiseLinearConstraint *> _plConstraints;
 
-    Map<unsigned, double> _solution;
+    Map<unsigned, double> _partialSolution;
 
     /*
       Free any stored pl constraints.
@@ -180,6 +181,10 @@ public:
       evaluation of topology-based bound tightening.
      */
     NLR::NetworkLevelReasoner *_networkLevelReasoner;
+
+    double calculateReducedVariableSolution(unsigned int variable) const;
+
+    void makeVariableReduced(Equation equation, unsigned int variable);
 };
 
 #endif // __InputQuery_h__

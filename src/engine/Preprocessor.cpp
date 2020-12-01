@@ -38,6 +38,33 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     _preprocessed = query;
 
     /*
+      Remove all zero coefficient
+    */
+    for ( Equation &equation : _preprocessed.getEquations() )
+    {
+        List<Equation::Addend>::iterator addend = equation._addends.begin();
+        while ( addend != equation._addends.end() )
+        {
+            if ( addend->_coefficient == 0 )
+                addend = equation._addends.erase( addend );
+            else
+                addend++;
+        }
+    }
+
+    for ( auto &v : _preprocessed._reducedVars )
+    {
+        List<Equation::Addend>::iterator addend = v.second->_addends.begin();
+        while ( addend != v.second->_addends.end() )
+        {
+            if ( addend->_coefficient == 0 )
+                addend = v.second->_addends.erase( addend );
+            else
+                addend++;
+        }
+    }
+
+    /*
       Next, make sure all equations are of type EQUALITY. If not, turn them
       into one.
     */
@@ -103,7 +130,7 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
         if ( _statistics )
             _statistics->ppIncNumTighteningIterations();
     }
-
+    std::cout << "test";
     collectFixedValues();
     separateMergedAndFixed();
 
@@ -371,6 +398,8 @@ bool Preprocessor::processEquations()
                                  _preprocessed.getUpperBound( xi ),
                                  GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
             {
+                std::cout << _preprocessed.getLowerBound( xi ) << std::endl;
+                std::cout << _preprocessed.getUpperBound( xi ) << std::endl;
                 delete[] ciTimesLb;
                 delete[] ciTimesUb;
                 delete[] ciSign;

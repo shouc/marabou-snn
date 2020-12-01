@@ -674,8 +674,11 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
     // If processing is enabled, invoke the preprocessor
     _preprocessingEnabled = preprocess;
     if ( _preprocessingEnabled )
+    {
         _preprocessedQuery = _preprocessor.preprocess
-            ( inputQuery, GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES );
+                ( inputQuery, GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES );
+    }
+
     else
         _preprocessedQuery = inputQuery;
 
@@ -769,6 +772,93 @@ double *Engine::createConstraintMatrix()
     }
 
     return constraintMatrix;
+}
+
+void Engine::reduceRedundantVars( InputQuery &inputQuery, unsigned optimizedCount ){
+    Map<unsigned, unsigned> varsToBeReduced;
+    List<Equation> equations = inputQuery.getEquations();
+    for ( Equation& eq : equations ){
+        unsigned addendsCount(0);
+        for (auto addend : eq._addends) {
+            if (addend._coefficient != 0)
+                addendsCount++;
+        }
+        for (auto addend : eq._addends) {
+            if (addend._coefficient != 0) {
+                if (addendsCount <= 2){
+                    if (!varsToBeReduced.exists(addend._variable))
+                        varsToBeReduced.insert(addend._variable, 0);
+                    varsToBeReduced[addend._variable]++;
+                } else {
+                    if (!varsToBeReduced.exists(addend._variable))
+                        varsToBeReduced.insert(addend._variable, 0);
+                    varsToBeReduced[addend._variable] = 10;
+                }
+            }
+        }
+    }
+    for ( auto varToBeReduced : varsToBeReduced ) {
+        if (varToBeReduced.second <= 2)
+        {
+            unsigned variable = varToBeReduced.first;
+            List<Equation>::iterator equationRelated[2];
+            unsigned foundCount = 0;
+
+            for (List<Equation>::iterator equationIterator = inputQuery._equations.begin();
+                 equationIterator != inputQuery._equations.end(); ++equationIterator){
+                for (auto addend : (*equationIterator)._addends) {
+                    if (addend._variable == variable && addend._coefficient != 0)
+                        equationRelated[foundCount++] = equationIterator;
+                }
+            }
+
+            if (foundCount == 1)
+            {
+                // remove eq
+                inputQuery.makeVariableReduced(*equationRelated[0], variable);
+                // propagate bounds
+                double upperBound = inputQuery.getUpperBound(variable);
+                double lowerBound = inputQuery.getLowerBound(variable);
+                // addend must be two
+                List<Equation::Addend> add = equationRelated[0]->_addends;
+                double rhs_result = equationRelated[0]->_scalar;
+                double var_coeff;
+                double res_coeff;
+                for (auto &ad: add)
+                {
+                    if (ad._variable == variable && ad._coefficient != 0)
+                    {
+                        var_coeff = ad._coefficient;
+                    }
+                    else if (ad._coefficient != 0)
+                    {
+                        res_coeff = ad._coefficient;
+                    }
+                }
+                // calc new lower bound
+                double new_lb = rhs_result - var_coeff * lowerBound;
+                new_lb /= res_coeff;
+                double new_ub = rhs_result - var_coeff * upperBound;
+                new_ub /= res_coeff;
+                // check who is more permissive
+                if (new_lb > lowerBound)
+                {
+                    inputQuery.setLowerBound(variable, new_lb);
+                }
+                if (new_ub < upperBound)
+                {
+                    inputQuery.setUpperBound(variable, new_ub);
+                }
+                inputQuery._equations.erase(equationRelated[0]);
+            }
+            else if (foundCount != 0)
+            {
+                break;
+            }
+            reduceRedundantVars(inputQuery, optimizedCount);
+            break;
+        }
+    }
 }
 
 void Engine::removeRedundantEquations( const double *constraintMatrix )
@@ -1073,6 +1163,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     try
     {
+        reduceRedundantVars(inputQuery, 0);
         informConstraintsOfInitialBounds( inputQuery );
         invokePreprocessor( inputQuery, preprocess );
         if ( _verbosity > 0 )

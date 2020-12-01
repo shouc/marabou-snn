@@ -111,6 +111,11 @@ List<Equation> &InputQuery::getEquations()
     return _equations;
 }
 
+void InputQuery::makeVariableReduced( Equation equation, unsigned variable )
+{
+    _reducedVars.insert(variable, equation.toHeap());
+}
+
 void InputQuery::removeEquationsByIndex( const Set<unsigned> indices )
 {
     unsigned m = _equations.size();
@@ -132,16 +137,38 @@ const List<Equation> &InputQuery::getEquations() const
 
 void InputQuery::setSolutionValue( unsigned variable, double value )
 {
-    _solution[variable] = value;
+    _partialSolution[variable] = value;
+}
+
+double InputQuery::calculateReducedVariableSolution( unsigned variable ) const {
+    Equation* eq = _reducedVars.get( variable );
+    Set<unsigned> participatedVars = eq->getParticipatingVariables();
+    Map<unsigned, double> participatedVarsSolution;
+    for(unsigned int participatedVar : participatedVars) {
+        if(participatedVar != variable)
+            participatedVarsSolution.setIfDoesNotExist(participatedVar,
+                                                       getSolutionValue(participatedVar));
+    }
+    double reducedVarResult( eq->_scalar );
+    double reducedVarCoefficient( 0 );
+    for(auto addend : eq->_addends) {
+        if (addend._variable == variable)
+            reducedVarCoefficient += addend._coefficient;
+        else
+            reducedVarResult -= addend._coefficient * participatedVarsSolution.get(addend._variable);
+    }
+    return reducedVarResult / reducedVarCoefficient;
 }
 
 double InputQuery::getSolutionValue( unsigned variable ) const
 {
-    if ( !_solution.exists( variable ) )
+    if ( _reducedVars.exists( variable ) )
+        return calculateReducedVariableSolution(variable);
+    if ( !_partialSolution.exists( variable ) ){
         throw MarabouError( MarabouError::VARIABLE_DOESNT_EXIST_IN_SOLUTION,
-                             Stringf( "Variable: %u", variable ).ascii() );
-
-    return _solution.get( variable );
+                            Stringf( "Variable: %u", variable ).ascii() );
+    }
+    return _partialSolution.get( variable );
 }
 
 void InputQuery::addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint )
@@ -214,7 +241,8 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     _equations = other._equations;
     _lowerBounds = other._lowerBounds;
     _upperBounds = other._upperBounds;
-    _solution = other._solution;
+    _partialSolution = other._partialSolution;
+    _reducedVars = other._reducedVars;
     _debuggingSolution = other._debuggingSolution;
 
     _variableToInputIndex = other._variableToInputIndex;

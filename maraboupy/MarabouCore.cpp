@@ -111,6 +111,22 @@ void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){
     ipq.addPiecewiseLinearConstraint(new AbsoluteValueConstraint(b, f));
 }
 
+void addSparsedVar(InputQuery& ipq, unsigned x, unsigned y,
+                   // contexts
+                   const std::set<unsigned>& layerSizes
+   ){
+    auto result = 0;
+    int cter(0);
+    for (auto v: layerSizes) {
+        if (cter++ == x){
+            break;
+        }
+        result += v;
+    }
+    result += y;
+    ipq.addSparsedVar(result);
+}
+
 bool createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
   try{
     AcasParser* acasParser = new AcasParser( String(networkFilePath) );

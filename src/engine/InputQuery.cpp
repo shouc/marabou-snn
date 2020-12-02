@@ -1059,3 +1059,7 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
     INPUT_QUERY_LOG( "\tSuccessful!" );
     return true;
 }
+
+void InputQuery::addSparsedVar(unsigned int i) {
+    sparsedIndex.append(i);
+}

@@ -174,7 +174,7 @@ public:
     Map<unsigned, unsigned> _inputIndexToVariable;
     Map<unsigned, unsigned> _variableToOutputIndex;
     Map<unsigned, unsigned> _outputIndexToVariable;
-
+    List<unsigned> sparsedIndex;
     /*
       An object that knows the topology of the network being checked,
       and can be used for various operations such as network
@@ -185,6 +185,8 @@ public:
     double calculateReducedVariableSolution(unsigned int variable) const;
 
     void makeVariableReduced(Equation equation, unsigned int variable);
+
+    void addSparsedVar(unsigned i);
 };
 
 #endif // __InputQuery_h__

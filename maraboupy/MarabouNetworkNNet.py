@@ -89,6 +89,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         self.biases = []
         self.f_variables = []
         self.b_variables = []
+        self.sparseOpt = []
 
     def resetNetworkFromParameters(self, weights: list, biases: list, normalize = False,
                                    inputMinimums=[], inputMaximums=[], inputMeans=[], inputRanges=[],
@@ -656,6 +657,10 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
         return outputs
 
+    def setSparseOpt(self, arr):
+        if arr:
+            self.sparseOpt = arr
+
     def createRandomInputsForNetwork(self):
         """Create a random input for the network.
 
@@ -674,6 +679,13 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             inputs.append(random_value)
         return inputs
 
+    def isSparseWeight(self, x, y, z):
+        for i in self.sparseOpt:
+            if i[0] == x and i[1] == y and i[2] == z:
+                return True
+        return False
+
+
     def buildEquations(self):
         """Construct the Marabou equations
         
@@ -682,8 +694,9 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         for layer, size in enumerate(self.layerSizes):
             if layer == 0:
                 continue
-
+            lNode = 0
             for node in range(size):
+                handled = False
                 bias = self.biases[layer - 1][node]
 
                 # Add marabou equation and add addend for output variable
@@ -692,7 +705,12 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
 
                 # Add addends for weighted input variables
                 for previous_node in range(self.layerSizes[layer - 1]):
-                    weight = self.weights[layer - 1][node][previous_node]
+                    if not handled:
+                        lNode += 1
+                        handled = True
+                    weight = 0
+                    if not self.isSparseWeight(layer, lNode, previous_node):
+                        weight = self.weights[layer - 1][node][previous_node]
 
                     # Adjust weights and bias of first layer to incorporate input normalization
                     if self.normalize and layer == 1:

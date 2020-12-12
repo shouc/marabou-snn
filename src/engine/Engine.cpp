@@ -773,8 +773,8 @@ double *Engine::createConstraintMatrix()
 
     return constraintMatrix;
 }
-
-void Engine::reduceRedundantVars( InputQuery &inputQuery, unsigned optimizedCount ){
+void Engine::reduceRedundantVars( InputQuery &inputQuery, unsigned& optimizedCount ){
+    optimizedCount += 1;
     Map<unsigned, unsigned> varsToBeReduced;
     List<Equation> equations = inputQuery.getEquations();
     for ( Equation& eq : equations ){
@@ -820,8 +820,8 @@ void Engine::reduceRedundantVars( InputQuery &inputQuery, unsigned optimizedCoun
                 // addend must be two
                 List<Equation::Addend> add = equationRelated[i]->_addends;
                 double rhs_result = equationRelated[i]->_scalar;
-                double var_coeff;
-                double res_coeff;
+                double var_coeff(1);
+                double res_coeff(1);
                 for (auto &ad: add)
                 {
                     if (ad._variable == variable && ad._coefficient != 0)
@@ -1157,8 +1157,11 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     try
     {
-        reduceRedundantVars(inputQuery, 0);
+        unsigned cter = 0;
+        reduceRedundantVars(inputQuery, cter);
+        printf("[292c] %d variables removed\n", cter);
         informConstraintsOfInitialBounds( inputQuery );
+
         invokePreprocessor( inputQuery, preprocess );
         if ( _verbosity > 0 )
             printInputBounds( inputQuery );

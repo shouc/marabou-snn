@@ -40,17 +40,21 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     /*
       Remove all zero coefficient
     */
+    int _cter(0);
     for ( Equation &equation : _preprocessed.getEquations() )
     {
         List<Equation::Addend>::iterator addend = equation._addends.begin();
         while ( addend != equation._addends.end() )
         {
-            if ( addend->_coefficient == 0 )
+            if ( addend->_coefficient == 0 ) {
+                _cter++;
                 addend = equation._addends.erase( addend );
+            }
             else
                 addend++;
         }
     }
+    printf("[292c] %d addends removed\n", _cter);
 
     for ( auto &v : _preprocessed._reducedVars )
     {

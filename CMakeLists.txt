@@ -22,6 +22,8 @@ list(FIND PYTHON_VERSIONS_SUPPORTED ${DEFAULT_PYTHON_VERSION} index)
 if(index EQUAL -1)
     message(FATAL_ERROR "python version must be one of ${PYTHON_VERSIONS_SUPPORTED}")
 endif()
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+
 
 set(MARABOU_LIB MarabouHelper)
 set(MARABOU_TEST_LIB MarabouHelperTest)
@@ -57,6 +59,7 @@ set(ENGINE_REAL "${ENGINE_DIR}/real")
 set(ENGINE_MOCK "${ENGINE_DIR}/mock")
 file(GLOB SRCS_ENGINE_REAL "${ENGINE_REAL}/*.cpp")
 file(GLOB SRCS_ENGINE_MOCK "${ENGINE_MOCK}/*.cpp")
+
 
 set(MPS_PARSER mps)
 set(ACAS_PARSER acas)
@@ -99,7 +102,7 @@ endif()
 # We build a static library that is the core of the project, the link it to the
 # API's (executable and python at the moment)
 add_library(${MARABOU_LIB} ${SRCS_COMMON_REAL} ${SRCS_ENGINE_REAL})
-add_executable(${MARABOU_EXE} "${ENGINE_DIR}/main.cpp")
+add_executable(${MARABOU_EXE} "src/engine/main.cpp")
 set(MARABOU_EXE_PATH "${BIN_DIR}/${MARABOU_EXE}")
 add_custom_command(TARGET ${MARABOU_EXE} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${MARABOU_EXE}> ${MARABOU_EXE_PATH} )
@@ -124,12 +127,12 @@ endif()
 
 if (NOT MSVC)
     set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD) #-Wno-deprecated
-    set(RELEASE_FLAGS ${COMPILE_FLAGS} -O3) #-Wno-deprecated
+    set(RELEASE_FLAGS ${COMPILE_FLAGS} -O0) #-Wno-deprecated
 endif()
 
 if (RUN_MEMORY_TEST)
     if(NOT MSVC)
-        set(MEMORY_FLAGS -fsanitize=address -fno-omit-frame-pointer -O1)
+        set(MEMORY_FLAGS -fsanitize=address -fno-omit-frame-pointer -O0)
     endif()
 endif()
 
